@@ -1582,9 +1582,10 @@ gb_internal Token expect_token(AstFile *f, TokenKind kind) {
 		if (prev.kind == Token_EOF) {
 			exit_with_errors();
 		}
+	} else {
+		advance_token(f);
 	}
 
-	advance_token(f);
 	return prev;
 }
 
@@ -4893,6 +4894,10 @@ gb_internal Ast *parse_case_clause(AstFile *f, bool is_type) {
 	}
 	f->allow_range = prev_allow_range;
 	f->allow_in_expr = prev_allow_in_expr;
+	if (f->curr_token.kind != Token_Colon && f->curr_token.kind != Token_Semicolon) {
+		Array<Ast *> stmts = {};
+		return ast_case_clause(f, f->curr_token, list, stmts);
+	}
 	expect_token(f, Token_Colon);
 	Array<Ast *> stmts = parse_stmt_list(f);
 

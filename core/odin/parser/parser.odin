@@ -392,8 +392,9 @@ expect_token :: proc(p: ^Parser, kind: tokenizer.Token_Kind) -> tokenizer.Token 
 		e := tokenizer.to_string(kind)
 		g := tokenizer.token_to_string(prev)
 		error(p, prev.pos, "expected '%s', got '%s'", e, g)
+	} else {
+		advance_token(p)
 	}
-	advance_token(p)
 	return prev
 }
 
@@ -998,6 +999,16 @@ parse_case_clause :: proc(p: ^Parser, is_type_switch: bool) -> ^ast.Case_Clause 
 		p.allow_range, p.allow_in_expr = !is_type_switch, !is_type_switch
 
 		list = parse_rhs_expr_list(p)
+	}
+
+	if p.curr_tok.kind != .Colon && p.curr_tok.kind != .Semicolon {
+		// incomplete case, we return
+		cc := ast.new(ast.Case_Clause, tok.pos, end_pos(p.prev_tok))
+		cc.list = list
+		cc.terminator = tokenizer.Token{}
+		cc.body = {}
+		cc.case_pos = tok.pos
+		return cc
 	}
 
 	terminator := expect_token(p, .Colon)
